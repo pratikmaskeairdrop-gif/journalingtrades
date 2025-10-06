@@ -7,7 +7,7 @@ import { TradingCalendar } from "./TradingCalendar";
 import { StatsCards } from "./StatsCards";
 import { CirclePlus as PlusCircle, TrendingUp, Calendar, Settings, Download, Upload, DollarSign, Menu } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { DatabaseService, TradeRecord, UserProfile } from "@/lib/supabase";
+import { DatabaseService, TradeRecord, UserProfile } from "@/lib/database";
 import { User } from "@supabase/supabase-js";
 
 export interface Trade {

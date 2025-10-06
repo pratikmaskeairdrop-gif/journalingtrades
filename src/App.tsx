@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { User } from "@supabase/supabase-js";
-import { AuthService } from "@/lib/supabase";
+import { AuthService } from "@/lib/database";
 import { AuthComponent } from "@/components/AuthComponent";
 import TradingDashboard from "@/components/TradingDashboard";
 import NotFound from "./pages/NotFound";

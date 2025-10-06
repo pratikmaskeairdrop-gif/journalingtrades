@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AuthService } from '@/lib/supabase';
+import { AuthService } from '@/lib/database';
 import { User } from '@supabase/supabase-js';
 import { LogIn, UserPlus, LogOut } from 'lucide-react';
 

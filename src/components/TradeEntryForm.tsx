@@ -151,7 +151,7 @@ export const TradeEntryForm = ({ onAddTrade, onCancel, accountSettings, defaultT
         </Button>
       </CardHeader>
       <CardContent>
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "simple" | "detailed")} className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-4 sm:mb-6">
             <TabsTrigger value="simple" className="flex items-center gap-2">
               <Target className="w-4 h-4" />

@@ -1,7 +1,7 @@
-import TradingDashboard from "@/components/TradingDashboard";
+import { Navigate } from "react-router-dom";
 
 const Index = () => {
-  return <TradingDashboard />;
+  return <Navigate to="/" replace />;
 };
 
 export default Index;
