@@ -1,11 +1,15 @@
 import { useState } from "react";
+import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { X, Calculator, Target } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { X, Calculator, Target, CalendarIcon } from "lucide-react";
 import { Trade, AccountSettings } from "./TradingDashboard";
+import { cn } from "@/lib/utils";
 
 interface TradeEntryFormProps {
   onAddTrade: (trade: Omit<Trade, "id">) => void;
@@ -25,15 +29,15 @@ export const TradeEntryForm = ({ onAddTrade, onCancel, accountSettings, defaultT
     size: "",
     riskPercent: accountSettings.defaultRiskPercent.toString(),
     accountBalance: accountSettings.balance.toString(),
-    date: new Date().toISOString().split("T")[0],
   });
+  const [detailedDate, setDetailedDate] = useState<Date>(new Date());
 
   const [simpleRRData, setSimpleRRData] = useState({
     pair: "",
     rrValue: "",
-    date: new Date().toISOString().split("T")[0],
     accountBalance: accountSettings.balance.toString(),
   });
+  const [simpleDate, setSimpleDate] = useState<Date>(new Date());
 
   const handleDetailedSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,7 +79,7 @@ export const TradeEntryForm = ({ onAddTrade, onCancel, accountSettings, defaultT
       profit,
       profitRR,
       isWin,
-      date: new Date(formData.date),
+      date: detailedDate,
       entryMethod: 'detailed',
       accountBalance,
       riskPercent
@@ -105,7 +109,7 @@ export const TradeEntryForm = ({ onAddTrade, onCancel, accountSettings, defaultT
       profit,
       profitRR: rrValue,
       isWin,
-      date: new Date(simpleRRData.date),
+      date: simpleDate,
       entryMethod: 'simple',
       accountBalance
     });
@@ -123,15 +127,15 @@ export const TradeEntryForm = ({ onAddTrade, onCancel, accountSettings, defaultT
       size: "",
       riskPercent: accountSettings.defaultRiskPercent.toString(),
       accountBalance: accountSettings.balance.toString(),
-      date: new Date().toISOString().split("T")[0],
     });
+    setDetailedDate(new Date());
 
     setSimpleRRData({
       pair: "",
       rrValue: "",
-      date: new Date().toISOString().split("T")[0],
       accountBalance: accountSettings.balance.toString(),
     });
+    setSimpleDate(new Date());
   };
 
   const handleDetailedChange = (field: string, value: string) => {
@@ -179,14 +183,29 @@ export const TradeEntryForm = ({ onAddTrade, onCancel, accountSettings, defaultT
                   />
                 </div>
                 <div>
-                  <Label htmlFor="simpleDate">Date</Label>
-                  <Input
-                    id="simpleDate"
-                    type="date"
-                    value={simpleRRData.date}
-                    onChange={(e) => handleSimpleChange("date", e.target.value)}
-                    required
-                  />
+                  <Label>Date</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !simpleDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {simpleDate ? format(simpleDate, "PPP") : <span>Pick a date</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={simpleDate}
+                        onSelect={(date) => date && setSimpleDate(date)}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
               </div>
 
@@ -248,14 +267,29 @@ export const TradeEntryForm = ({ onAddTrade, onCancel, accountSettings, defaultT
                   />
                 </div>
                 <div>
-                  <Label htmlFor="date">Date</Label>
-                  <Input
-                    id="date"
-                    type="date"
-                    value={formData.date}
-                    onChange={(e) => handleDetailedChange("date", e.target.value)}
-                    required
-                  />
+                  <Label>Date</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !detailedDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {detailedDate ? format(detailedDate, "PPP") : <span>Pick a date</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={detailedDate}
+                        onSelect={(date) => date && setDetailedDate(date)}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
               </div>
 
