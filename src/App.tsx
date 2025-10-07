@@ -26,6 +26,7 @@ const App = () => {
     // Listen for auth changes
     const { data: { subscription } } = AuthService.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
+      // Do not reload, just update the user state
     });
 
     return () => subscription.unsubscribe();

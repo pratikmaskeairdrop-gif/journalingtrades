@@ -9,6 +9,18 @@ import { CirclePlus as PlusCircle, TrendingUp, Calendar, Settings, Download, Upl
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { DatabaseService, TradeRecord, UserProfile } from "@/lib/database";
 import { User } from "@supabase/supabase-js";
+import { Pencil, Trash2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export interface Trade {
   id: string;
@@ -43,10 +55,13 @@ const TradingDashboard = ({ user }: TradingDashboardProps) => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [displayMode, setDisplayMode] = useState<"$" | "RR">("$");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [editingTrade, setEditingTrade] = useState<Trade | null>(null);
+  const [tradeToDelete, setTradeToDelete] = useState<string | null>(null);
   const [accountSettings, setAccountSettings] = useState<AccountSettings>({
     balance: 100000,
     defaultRiskPercent: 1
   });
+  const { toast } = useToast();
 
   // Load user data on component mount
   useEffect(() => {
@@ -102,6 +117,12 @@ const TradingDashboard = ({ user }: TradingDashboardProps) => {
   };
 
   const addTrade = async (trade: Omit<Trade, "id">) => {
+    // Format date to YYYY-MM-DD in local timezone
+    const year = trade.date.getFullYear();
+    const month = String(trade.date.getMonth() + 1).padStart(2, '0');
+    const day = String(trade.date.getDate()).padStart(2, '0');
+    const formattedDate = `${year}-${month}-${day}`;
+    
     // Save to database
     const tradeRecord: Omit<TradeRecord, 'id' | 'created_at' | 'updated_at'> = {
       user_id: user.id,
@@ -117,7 +138,7 @@ const TradingDashboard = ({ user }: TradingDashboardProps) => {
       entry_method: trade.entryMethod,
       account_balance_at_trade: trade.accountBalance,
       risk_percent: trade.riskPercent || null,
-      trade_date: trade.date.toISOString().split('T')[0]
+      trade_date: formattedDate
     };
     
     const savedTrade = await DatabaseService.createTrade(tradeRecord);
@@ -161,6 +182,59 @@ const TradingDashboard = ({ user }: TradingDashboardProps) => {
     }
     
     setShowAddForm(false);
+    setEditingTrade(null);
+    toast({
+      title: "Trade added",
+      description: "Your trade has been saved successfully.",
+    });
+  };
+
+  const updateTrade = async (trade: Trade) => {
+    const year = trade.date.getFullYear();
+    const month = String(trade.date.getMonth() + 1).padStart(2, '0');
+    const day = String(trade.date.getDate()).padStart(2, '0');
+    const formattedDate = `${year}-${month}-${day}`;
+
+    const updates = {
+      pair: trade.pair,
+      entry_price: trade.entry || null,
+      exit_price: trade.exit || null,
+      stop_loss: trade.stopLoss || null,
+      take_profit: trade.takeProfit || null,
+      position_size: trade.size,
+      profit_usd: trade.profit,
+      profit_rr: trade.profitRR,
+      is_win: trade.isWin,
+      entry_method: trade.entryMethod,
+      account_balance_at_trade: trade.accountBalance,
+      risk_percent: trade.riskPercent || null,
+      trade_date: formattedDate
+    };
+
+    const updated = await DatabaseService.updateTrade(trade.id, updates);
+
+    if (updated) {
+      setTrades(prev => prev.map(t => t.id === trade.id ? trade : t));
+      setEditingTrade(null);
+      setShowAddForm(false);
+      toast({
+        title: "Trade updated",
+        description: "Your trade has been updated successfully.",
+      });
+    }
+  };
+
+  const deleteTrade = async (tradeId: string) => {
+    const success = await DatabaseService.deleteTrade(tradeId);
+    
+    if (success) {
+      setTrades(prev => prev.filter(t => t.id !== tradeId));
+      setTradeToDelete(null);
+      toast({
+        title: "Trade deleted",
+        description: "Your trade has been deleted successfully.",
+      });
+    }
   };
 
   const exportToCSV = () => {
@@ -369,15 +443,15 @@ const TradingDashboard = ({ user }: TradingDashboardProps) => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {trades.slice(-5).reverse().map((trade) => (
+                  {trades.slice(0, 10).map((trade) => (
                     <div 
                       key={trade.id}
                       className={`p-3 rounded-lg border ${
                         trade.isWin ? "profit-positive" : "profit-negative"
                       }`}
                     >
-                      <div className="flex justify-between items-start">
-                        <div>
+                      <div className="flex justify-between items-start gap-2">
+                        <div className="flex-1">
                           <p className="font-medium">{trade.pair}</p>
                           <p className="text-sm text-muted-foreground">
                             {trade.date.toLocaleDateString()}
@@ -390,6 +464,27 @@ const TradingDashboard = ({ user }: TradingDashboardProps) => {
                           <p className="text-sm text-muted-foreground">
                             Size: ${trade.size.toFixed(0)}
                           </p>
+                        </div>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => {
+                              setEditingTrade(trade);
+                              setShowAddForm(true);
+                            }}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:text-destructive"
+                            onClick={() => setTradeToDelete(trade.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
                     </div>
@@ -410,14 +505,39 @@ const TradingDashboard = ({ user }: TradingDashboardProps) => {
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
             <div className="bg-card border border-border rounded-xl p-4 sm:p-6 w-full max-w-2xl my-8">
               <TradeEntryForm 
-                onAddTrade={addTrade}
-                onCancel={() => setShowAddForm(false)}
+                onAddTrade={editingTrade ? updateTrade : addTrade}
+                onCancel={() => {
+                  setShowAddForm(false);
+                  setEditingTrade(null);
+                }}
                 accountSettings={accountSettings}
                 defaultTab="simple"
+                editingTrade={editingTrade}
               />
             </div>
           </div>
         )}
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={!!tradeToDelete} onOpenChange={() => setTradeToDelete(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Trade</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete this trade? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => tradeToDelete && deleteTrade(tradeToDelete)}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );

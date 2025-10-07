@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,32 +12,33 @@ import { Trade, AccountSettings } from "./TradingDashboard";
 import { cn } from "@/lib/utils";
 
 interface TradeEntryFormProps {
-  onAddTrade: (trade: Omit<Trade, "id">) => void;
+  onAddTrade: (trade: any) => void;
   onCancel: () => void;
   accountSettings: AccountSettings;
   defaultTab?: "detailed" | "simple";
+  editingTrade?: Trade | null;
 }
 
-export const TradeEntryForm = ({ onAddTrade, onCancel, accountSettings, defaultTab = "simple" }: TradeEntryFormProps) => {
-  const [activeTab, setActiveTab] = useState(defaultTab);
+export const TradeEntryForm = ({ onAddTrade, onCancel, accountSettings, defaultTab = "simple", editingTrade }: TradeEntryFormProps) => {
+  const [activeTab, setActiveTab] = useState(editingTrade?.entryMethod || defaultTab);
   const [formData, setFormData] = useState({
-    pair: "",
-    entry: "",
-    exit: "",
-    stopLoss: "",
-    takeProfit: "",
-    size: "",
-    riskPercent: accountSettings.defaultRiskPercent.toString(),
-    accountBalance: accountSettings.balance.toString(),
+    pair: editingTrade?.pair || "",
+    entry: editingTrade?.entry?.toString() || "",
+    exit: editingTrade?.exit?.toString() || "",
+    stopLoss: editingTrade?.stopLoss?.toString() || "",
+    takeProfit: editingTrade?.takeProfit?.toString() || "",
+    size: editingTrade?.size.toString() || "",
+    riskPercent: editingTrade?.riskPercent?.toString() || accountSettings.defaultRiskPercent.toString(),
+    accountBalance: editingTrade?.accountBalance.toString() || accountSettings.balance.toString(),
   });
-  const [detailedDate, setDetailedDate] = useState<Date>(new Date());
+  const [detailedDate, setDetailedDate] = useState<Date>(editingTrade?.date || new Date());
 
   const [simpleRRData, setSimpleRRData] = useState({
-    pair: "",
-    rrValue: "",
-    accountBalance: accountSettings.balance.toString(),
+    pair: editingTrade?.pair || "",
+    rrValue: editingTrade?.profitRR.toString() || "",
+    accountBalance: editingTrade?.accountBalance.toString() || accountSettings.balance.toString(),
   });
-  const [simpleDate, setSimpleDate] = useState<Date>(new Date());
+  const [simpleDate, setSimpleDate] = useState<Date>(editingTrade?.date || new Date());
 
   const handleDetailedSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,6 +71,7 @@ export const TradeEntryForm = ({ onAddTrade, onCancel, accountSettings, defaultT
     const isWin = profit > 0;
 
     onAddTrade({
+      ...(editingTrade && { id: editingTrade.id }),
       pair: formData.pair,
       entry,
       exit,
@@ -104,6 +106,7 @@ export const TradeEntryForm = ({ onAddTrade, onCancel, accountSettings, defaultT
     const isWin = rrValue > 0;
 
     onAddTrade({
+      ...(editingTrade && { id: editingTrade.id }),
       pair: simpleRRData.pair,
       size: oneR, // For simple mode, size represents the risk amount
       profit,
@@ -149,7 +152,7 @@ export const TradeEntryForm = ({ onAddTrade, onCancel, accountSettings, defaultT
   return (
     <Card className="w-full">
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Add New Trade</CardTitle>
+        <CardTitle>{editingTrade ? 'Edit Trade' : 'Add New Trade'}</CardTitle>
         <Button variant="ghost" size="sm" onClick={onCancel}>
           <X className="w-4 h-4" />
         </Button>
@@ -254,7 +257,7 @@ export const TradeEntryForm = ({ onAddTrade, onCancel, accountSettings, defaultT
 
               <div className="flex flex-col sm:flex-row gap-2 pt-4">
                 <Button type="submit" className="flex-1 gradient-primary">
-                  Add Trade
+                  {editingTrade ? 'Update Trade' : 'Add Trade'}
                 </Button>
                 <Button type="button" variant="outline" onClick={onCancel}>
                   Cancel
@@ -381,7 +384,7 @@ export const TradeEntryForm = ({ onAddTrade, onCancel, accountSettings, defaultT
 
               <div className="flex flex-col sm:flex-row gap-2 pt-4">
                 <Button type="submit" className="flex-1 gradient-primary">
-                  Add Trade
+                  {editingTrade ? 'Update Trade' : 'Add Trade'}
                 </Button>
                 <Button type="button" variant="outline" onClick={onCancel}>
                   Cancel

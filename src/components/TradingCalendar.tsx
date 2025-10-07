@@ -285,12 +285,12 @@ export const TradingCalendar = ({ trades, displayMode }: TradingCalendarProps) =
                   <span className="font-medium">{week.winRate.toFixed(1)}%</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm">Wins:</span>
-                  <span className="font-medium text-green-400">{week.wins}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm">Losses:</span>
-                  <span className="font-medium text-red-400">{week.losses}</span>
+                  <span className="text-sm">W/L:</span>
+                  <span className="font-medium">
+                    <span className="text-green-400">{week.wins}</span>
+                    <span className="text-muted-foreground"> / </span>
+                    <span className="text-red-400">{week.losses}</span>
+                  </span>
                 </div>
               </div>
             </div>
