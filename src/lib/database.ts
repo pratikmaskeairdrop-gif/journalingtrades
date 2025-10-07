@@ -43,7 +43,11 @@ export class DatabaseService {
       .single();
 
     if (error) {
-      console.error('Error fetching user profile:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error fetching user profile:', error);
+      } else {
+        console.error('Error fetching user profile');
+      }
       return null;
     }
 
@@ -58,7 +62,11 @@ export class DatabaseService {
       .single();
 
     if (error) {
-      console.error('Error creating user profile:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error creating user profile:', error);
+      } else {
+        console.error('Error creating user profile');
+      }
       return null;
     }
 
@@ -74,7 +82,11 @@ export class DatabaseService {
       .single();
 
     if (error) {
-      console.error('Error updating user profile:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error updating user profile:', error);
+      } else {
+        console.error('Error updating user profile');
+      }
       return null;
     }
 
@@ -90,7 +102,11 @@ export class DatabaseService {
       .order('trade_date', { ascending: false });
 
     if (error) {
-      console.error('Error fetching trades:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error fetching trades:', error);
+      } else {
+        console.error('Error fetching trades');
+      }
       return [];
     }
 
@@ -105,7 +121,11 @@ export class DatabaseService {
       .single();
 
     if (error) {
-      console.error('Error creating trade:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error creating trade:', error);
+      } else {
+        console.error('Error creating trade');
+      }
       return null;
     }
 
@@ -121,7 +141,11 @@ export class DatabaseService {
       .single();
 
     if (error) {
-      console.error('Error updating trade:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error updating trade:', error);
+      } else {
+        console.error('Error updating trade');
+      }
       return null;
     }
 
@@ -135,7 +159,11 @@ export class DatabaseService {
       .eq('id', tradeId);
 
     if (error) {
-      console.error('Error deleting trade:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error deleting trade:', error);
+      } else {
+        console.error('Error deleting trade');
+      }
       return false;
     }
 
@@ -146,10 +174,12 @@ export class DatabaseService {
 // Authentication functions
 export class AuthService {
   static async signUp(email: string, password: string, fullName?: string) {
+    const redirectUrl = `${window.location.origin}/`;
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
+        emailRedirectTo: redirectUrl,
         data: {
           full_name: fullName,
         },

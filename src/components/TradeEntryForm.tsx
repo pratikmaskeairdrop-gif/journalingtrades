@@ -10,6 +10,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { X, Calculator, Target, CalendarIcon } from "lucide-react";
 import { Trade, AccountSettings } from "./TradingDashboard";
 import { cn } from "@/lib/utils";
+import { detailedTradeSchema, simpleTradeSchema } from "@/lib/validation";
+import { toast } from "sonner";
 
 interface TradeEntryFormProps {
   onAddTrade: (trade: any) => void;
@@ -50,7 +52,21 @@ export const TradeEntryForm = ({ onAddTrade, onCancel, accountSettings, defaultT
     const accountBalance = parseFloat(formData.accountBalance);
     const riskPercent = parseFloat(formData.riskPercent);
     
-    if (!formData.pair || isNaN(entry) || isNaN(exit) || isNaN(stopLoss) || isNaN(accountBalance) || isNaN(riskPercent)) {
+    // Validate inputs using zod schema
+    const validationResult = detailedTradeSchema.safeParse({
+      pair: formData.pair,
+      entry,
+      exit,
+      stopLoss,
+      takeProfit: isNaN(takeProfit) ? undefined : takeProfit,
+      accountBalance,
+      riskPercent,
+      date: detailedDate,
+    });
+
+    if (!validationResult.success) {
+      const errors = validationResult.error.errors;
+      toast.error(errors[0]?.message || "Invalid input");
       return;
     }
 
@@ -96,7 +112,17 @@ export const TradeEntryForm = ({ onAddTrade, onCancel, accountSettings, defaultT
     const rrValue = parseFloat(simpleRRData.rrValue);
     const accountBalance = parseFloat(simpleRRData.accountBalance);
     
-    if (!simpleRRData.pair || isNaN(rrValue) || isNaN(accountBalance)) {
+    // Validate inputs using zod schema
+    const validationResult = simpleTradeSchema.safeParse({
+      pair: simpleRRData.pair,
+      rrValue,
+      accountBalance,
+      date: simpleDate,
+    });
+
+    if (!validationResult.success) {
+      const errors = validationResult.error.errors;
+      toast.error(errors[0]?.message || "Invalid input");
       return;
     }
 
