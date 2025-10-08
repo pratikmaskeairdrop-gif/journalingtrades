@@ -63,10 +63,10 @@ const TradingDashboard = ({ user }: TradingDashboardProps) => {
   });
   const { toast } = useToast();
 
-  // Load user data on component mount
+  // Load user data on component mount - only once
   useEffect(() => {
     loadUserData();
-  }, [user]);
+  }, []); // Empty dependency array to run only once on mount
 
   const loadUserData = async () => {
     setLoading(true);

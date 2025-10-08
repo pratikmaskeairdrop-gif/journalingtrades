@@ -10,7 +10,15 @@ import { AuthComponent } from "@/components/AuthComponent";
 import TradingDashboard from "@/components/TradingDashboard";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+      refetchOnMount: false,
+    },
+  },
+});
 
 const App = () => {
   const [user, setUser] = useState<User | null>(null);
