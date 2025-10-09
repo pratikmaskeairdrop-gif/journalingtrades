@@ -7,7 +7,9 @@ import { TradingCalendar } from "./TradingCalendar";
 import { StatsCards } from "./StatsCards";
 import { CirclePlus as PlusCircle, TrendingUp, Calendar, Settings, Download, Upload, DollarSign, Menu } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { DatabaseService, TradeRecord, UserProfile } from "@/lib/database";
+import { DatabaseService, TradeRecord, UserProfile, Account } from "@/lib/database";
+import { AddAccountDialog } from "./AddAccountDialog";
+import { AccountSelector } from "./AccountSelector";
 import { User } from "@supabase/supabase-js";
 import { Pencil, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -51,6 +53,8 @@ interface TradingDashboardProps {
 const TradingDashboard = ({ user }: TradingDashboardProps) => {
   const [trades, setTrades] = useState<Trade[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
   const [displayMode, setDisplayMode] = useState<"$" | "RR">("$");
@@ -93,6 +97,26 @@ const TradingDashboard = ({ user }: TradingDashboardProps) => {
       });
     }
     
+    // Load accounts
+    const userAccounts = await DatabaseService.getUserAccounts(user.id);
+    
+    // Create a default account if none exist
+    if (userAccounts.length === 0) {
+      const defaultAccount = await DatabaseService.createAccount({
+        user_id: user.id,
+        account_name: "Main Account",
+        balance: profile?.account_balance || 100000
+      });
+      
+      if (defaultAccount) {
+        setAccounts([defaultAccount]);
+        setSelectedAccountId(defaultAccount.id);
+      }
+    } else {
+      setAccounts(userAccounts);
+      setSelectedAccountId(userAccounts[0].id);
+    }
+    
     // Load trades
     const tradeRecords = await DatabaseService.getUserTrades(user.id);
     const formattedTrades: Trade[] = tradeRecords.map(record => ({
@@ -116,6 +140,30 @@ const TradingDashboard = ({ user }: TradingDashboardProps) => {
     setLoading(false);
   };
 
+  const handleAddAccount = async (accountName: string, balance: number) => {
+    const newAccount = await DatabaseService.createAccount({
+      user_id: user.id,
+      account_name: accountName,
+      balance
+    });
+
+    if (newAccount) {
+      setAccounts(prev => [...prev, newAccount]);
+      setSelectedAccountId(newAccount.id);
+    }
+  };
+
+  const handleSelectAccount = (accountId: string) => {
+    setSelectedAccountId(accountId);
+    const account = accounts.find(a => a.id === accountId);
+    if (account) {
+      setAccountSettings({
+        balance: account.balance,
+        defaultRiskPercent: userProfile?.default_risk_percent || 1
+      });
+    }
+  };
+
   const addTrade = async (trade: Omit<Trade, "id">) => {
     // Format date to YYYY-MM-DD in local timezone
     const year = trade.date.getFullYear();
@@ -126,6 +174,7 @@ const TradingDashboard = ({ user }: TradingDashboardProps) => {
     // Save to database
     const tradeRecord: Omit<TradeRecord, 'id' | 'created_at' | 'updated_at'> = {
       user_id: user.id,
+      account_id: selectedAccountId || undefined,
       pair: trade.pair,
       entry_price: trade.entry || null,
       exit_price: trade.exit || null,
@@ -164,18 +213,17 @@ const TradingDashboard = ({ user }: TradingDashboardProps) => {
       
       setTrades(prev => [newTrade, ...prev]);
       
-      // Update user profile with new account balance
-      if (userProfile) {
-        const updatedProfile = await DatabaseService.updateUserProfile(user.id, {
-          account_balance: trade.accountBalance,
-          default_risk_percent: trade.riskPercent || userProfile.default_risk_percent
+      // Update account balance
+      if (selectedAccountId) {
+        const updatedAccount = await DatabaseService.updateAccount(selectedAccountId, {
+          balance: trade.accountBalance
         });
         
-        if (updatedProfile) {
-          setUserProfile(updatedProfile);
+        if (updatedAccount) {
+          setAccounts(prev => prev.map(a => a.id === selectedAccountId ? updatedAccount : a));
           setAccountSettings({
-            balance: updatedProfile.account_balance,
-            defaultRiskPercent: updatedProfile.default_risk_percent
+            balance: updatedAccount.balance,
+            defaultRiskPercent: userProfile?.default_risk_percent || 1
           });
         }
       }
@@ -326,10 +374,12 @@ const TradingDashboard = ({ user }: TradingDashboardProps) => {
 
   const ActionButtons = () => (
     <div className="flex flex-wrap gap-2">
-      <Button variant="outline" size="sm" className="text-xs">
-        <DollarSign className="w-3 h-3 mr-1" />
-        <span className="hidden sm:inline">Account: </span>${accountSettings.balance.toLocaleString()}
-      </Button>
+      <AccountSelector
+        accounts={accounts}
+        selectedAccountId={selectedAccountId}
+        onSelectAccount={handleSelectAccount}
+      />
+      <AddAccountDialog onAddAccount={handleAddAccount} />
       <Button variant="outline" size="sm" onClick={exportToCSV} className="text-xs">
         <Download className="w-3 h-3 mr-1" />
         <span className="hidden sm:inline">Export</span>

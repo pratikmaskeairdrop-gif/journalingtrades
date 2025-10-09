@@ -12,9 +12,19 @@ export interface UserProfile {
   updated_at: string;
 }
 
+export interface Account {
+  id: string;
+  user_id: string;
+  account_name: string;
+  balance: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface TradeRecord {
   id: string;
   user_id: string;
+  account_id?: string;
   pair: string;
   entry_price?: number;
   exit_price?: number;
@@ -163,6 +173,83 @@ export class DatabaseService {
         console.error('Error deleting trade:', error);
       } else {
         console.error('Error deleting trade');
+      }
+      return false;
+    }
+
+    return true;
+  }
+
+  // Account functions
+  static async getUserAccounts(userId: string): Promise<Account[]> {
+    const { data, error } = await supabase
+      .from('accounts')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      if (import.meta.env.DEV) {
+        console.error('Error fetching accounts:', error);
+      } else {
+        console.error('Error fetching accounts');
+      }
+      return [];
+    }
+
+    return (data || []) as Account[];
+  }
+
+  static async createAccount(account: Omit<Account, 'id' | 'created_at' | 'updated_at'>): Promise<Account | null> {
+    const { data, error } = await supabase
+      .from('accounts')
+      .insert([account as any])
+      .select()
+      .single();
+
+    if (error) {
+      if (import.meta.env.DEV) {
+        console.error('Error creating account:', error);
+      } else {
+        console.error('Error creating account');
+      }
+      return null;
+    }
+
+    return data as Account;
+  }
+
+  static async updateAccount(accountId: string, updates: Partial<Account>): Promise<Account | null> {
+    const { data, error } = await supabase
+      .from('accounts')
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq('id', accountId)
+      .select()
+      .single();
+
+    if (error) {
+      if (import.meta.env.DEV) {
+        console.error('Error updating account:', error);
+      } else {
+        console.error('Error updating account');
+      }
+      return null;
+    }
+
+    return data as Account;
+  }
+
+  static async deleteAccount(accountId: string): Promise<boolean> {
+    const { error } = await supabase
+      .from('accounts')
+      .delete()
+      .eq('id', accountId);
+
+    if (error) {
+      if (import.meta.env.DEV) {
+        console.error('Error deleting account:', error);
+      } else {
+        console.error('Error deleting account');
       }
       return false;
     }
