@@ -195,7 +195,7 @@ export const TradingCalendar = ({ trades, displayMode }: TradingCalendarProps) =
         
         {calendarDays.map((day, index) => {
           if (!day) {
-            return <div key={index} className="p-1 sm:p-2 h-12 sm:h-16" />;
+            return <div key={`empty-${index}`} className="p-1 sm:p-2 h-12 sm:h-16" />;
           }
 
           const dayTrades = getTradesForDate(day);
@@ -205,7 +205,7 @@ export const TradingCalendar = ({ trades, displayMode }: TradingCalendarProps) =
 
           return (
             <div
-              key={day}
+              key={`day-${day}-${index}`}
               className={`
                 p-1 sm:p-2 h-12 sm:h-16 border border-border rounded-lg relative overflow-hidden
                 ${isToday ? "ring-2 ring-primary" : ""}
@@ -267,7 +267,7 @@ export const TradingCalendar = ({ trades, displayMode }: TradingCalendarProps) =
         {/* Weekly Performance */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {getWeeksInMonth().map((week, index) => (
-            <div key={index} className="trading-card p-4">
+            <div key={`week-${index}`} className="trading-card p-4">
               <div className="text-sm text-muted-foreground mb-2 font-semibold">Week {index + 1}</div>
               <div className="space-y-1">
                 <div className="flex justify-between">

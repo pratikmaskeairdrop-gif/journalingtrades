@@ -169,9 +169,8 @@ const TradingDashboard = ({ user }: TradingDashboardProps) => {
   const accountTrades = useMemo(() => {
     if (!selectedAccountId) return [];
     return trades.filter(trade => {
-      // Find the trade record to get account_id
-      const tradeRecord = trades.find(t => t.id === trade.id);
-      return tradeRecord && (tradeRecord as any).account_id === selectedAccountId;
+      const tradeWithAccountId = trade as any;
+      return tradeWithAccountId.account_id === selectedAccountId;
     });
   }, [trades, selectedAccountId]);
 
