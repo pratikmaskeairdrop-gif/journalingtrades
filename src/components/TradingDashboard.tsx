@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -133,8 +133,9 @@ const TradingDashboard = ({ user }: TradingDashboardProps) => {
       isWin: record.is_win,
       entryMethod: record.entry_method,
       accountBalance: record.account_balance_at_trade,
-      riskPercent: record.risk_percent || undefined
-    }));
+      riskPercent: record.risk_percent || undefined,
+      account_id: record.account_id // Store account_id
+    } as any));
     
     setTrades(formattedTrades);
     setLoading(false);
@@ -163,6 +164,16 @@ const TradingDashboard = ({ user }: TradingDashboardProps) => {
       });
     }
   };
+
+  // Filter trades by selected account
+  const accountTrades = useMemo(() => {
+    if (!selectedAccountId) return [];
+    return trades.filter(trade => {
+      // Find the trade record to get account_id
+      const tradeRecord = trades.find(t => t.id === trade.id);
+      return tradeRecord && (tradeRecord as any).account_id === selectedAccountId;
+    });
+  }, [trades, selectedAccountId]);
 
   const addTrade = async (trade: Omit<Trade, "id">) => {
     // Format date to YYYY-MM-DD in local timezone
@@ -357,9 +368,9 @@ const TradingDashboard = ({ user }: TradingDashboardProps) => {
     event.target.value = '';
   };
 
-  const totalProfit = trades.reduce((sum, trade) => sum + trade.profit, 0);
-  const totalProfitRR = trades.reduce((sum, trade) => sum + trade.profitRR, 0);
-  const winRate = trades.length > 0 ? (trades.filter(trade => trade.isWin).length / trades.length) * 100 : 0;
+  const totalProfit = accountTrades.reduce((sum, trade) => sum + trade.profit, 0);
+  const totalProfitRR = accountTrades.reduce((sum, trade) => sum + trade.profitRR, 0);
+  const winRate = accountTrades.length > 0 ? (accountTrades.filter(trade => trade.isWin).length / accountTrades.length) * 100 : 0;
 
   if (loading) {
     return (
@@ -416,7 +427,7 @@ const TradingDashboard = ({ user }: TradingDashboardProps) => {
           <div className="flex items-center gap-2">
             <Badge variant="secondary" className="px-4 py-2">
               <TrendingUp className="w-4 h-4 mr-2" />
-              {trades.length} Trades Logged
+              {accountTrades.length} Trades Logged
             </Badge>
           </div>
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
@@ -446,7 +457,7 @@ const TradingDashboard = ({ user }: TradingDashboardProps) => {
           <div className="flex items-center gap-4">
             <Badge variant="secondary" className="px-4 py-2">
               <TrendingUp className="w-4 h-4 mr-2" />
-              {trades.length} Trades Logged
+              {accountTrades.length} Trades Logged
             </Badge>
             <Badge 
               variant={totalProfit >= 0 ? "default" : "destructive"} 
@@ -466,7 +477,7 @@ const TradingDashboard = ({ user }: TradingDashboardProps) => {
         </div>
 
         {/* Stats Cards */}
-        <StatsCards trades={trades} displayMode={displayMode} />
+        <StatsCards trades={accountTrades} displayMode={displayMode} />
 
         {/* Main Content */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
@@ -480,7 +491,7 @@ const TradingDashboard = ({ user }: TradingDashboardProps) => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <TradingCalendar trades={trades} displayMode={displayMode} />
+                <TradingCalendar trades={accountTrades} displayMode={displayMode} />
               </CardContent>
             </Card>
           </div>
@@ -493,7 +504,7 @@ const TradingDashboard = ({ user }: TradingDashboardProps) => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {trades.slice(0, 10).map((trade) => (
+                  {accountTrades.slice(0, 10).map((trade) => (
                     <div 
                       key={trade.id}
                       className={`p-3 rounded-lg border ${
