@@ -39,6 +39,7 @@ export interface Trade {
   entryMethod: 'detailed' | 'simple';
   accountBalance: number;
   riskPercent?: number;
+  account_id?: string;
 }
 
 export interface AccountSettings {
@@ -134,8 +135,8 @@ const TradingDashboard = ({ user }: TradingDashboardProps) => {
       entryMethod: record.entry_method,
       accountBalance: record.account_balance_at_trade,
       riskPercent: record.risk_percent || undefined,
-      account_id: record.account_id // Store account_id
-    } as any));
+      account_id: record.account_id || undefined
+    }));
     
     setTrades(formattedTrades);
     setLoading(false);
@@ -168,10 +169,7 @@ const TradingDashboard = ({ user }: TradingDashboardProps) => {
   // Filter trades by selected account
   const accountTrades = useMemo(() => {
     if (!selectedAccountId) return [];
-    return trades.filter(trade => {
-      const tradeWithAccountId = trade as any;
-      return tradeWithAccountId.account_id === selectedAccountId;
-    });
+    return trades.filter(trade => trade.account_id === selectedAccountId);
   }, [trades, selectedAccountId]);
 
   const addTrade = async (trade: Omit<Trade, "id">) => {
@@ -218,7 +216,8 @@ const TradingDashboard = ({ user }: TradingDashboardProps) => {
         isWin: savedTrade.is_win,
         entryMethod: savedTrade.entry_method,
         accountBalance: savedTrade.account_balance_at_trade,
-        riskPercent: savedTrade.risk_percent || undefined
+        riskPercent: savedTrade.risk_percent || undefined,
+        account_id: savedTrade.account_id || undefined
       };
       
       setTrades(prev => [newTrade, ...prev]);
